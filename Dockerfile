@@ -5,9 +5,9 @@ MAINTAINER Onni Hakala <onni.hakala@geniem.com>
 ARG NGX_MOD_CACHE_PURGE_VERSION="2.3"
 
 # Build Arguments for openresty/nginx
-ARG RESTY_VERSION="1.9.15.1"
+ARG RESTY_VERSION="1.11.2.1"
 ARG RESTY_OPENSSL_VERSION="1.0.2h"
-ARG RESTY_PCRE_VERSION="8.38"
+ARG RESTY_PCRE_VERSION="8.39"
 ARG RESTY_CONFIG_OPTIONS="\
     --with-http_addition_module \
     --with-http_auth_request_module \
@@ -46,6 +46,9 @@ ARG RESTY_CONFIG_OPTIONS="\
     --without-http_uwsgi_module \
     --without-http_scgi_module \
     --without-http_referer_module \
+
+     --user=nginx \
+     --group=nginx \
 
     --sbin-path=/usr/sbin \
     --modules-path=/usr/lib/nginx \
@@ -110,18 +113,42 @@ RUN \
     && make -j${NPROC} \
     && make -j${NPROC} install \
 
+    # Remove unneccessary nginx files
+    && rm /etc/nginx/*.default \
+
     # Cleanup
     && rm -rf /tmp/* \
-    && apk del .build-deps \
+    && apk del .build-deps
 
+RUN \
     # Temp directory
-    && mkdir /tmp/nginx/ \
+    mkdir /tmp/nginx/ \
 
     # Symlink modules path to config path for easier usage
     && ln -sf /usr/lib/nginx /etc/nginx/modules \
+
+    # Create nginx group
+    && addgroup -S nginx -g 8889 \
+    && adduser -S -G nginx -u 8888 nginx \
 
     # Symlink nginx logs to system output
     && ln -sf /dev/stdout /var/log/nginx/access.log \
     && ln -sf /dev/stderr /var/log/nginx/error.log
 
-ADD nginx.conf /etc/nginx/nginx.conf
+ENV \
+    # Custom port for nginx
+    PORT=8080 \
+
+    # Custom web root for nginx
+    WEB_ROOT="/var/www/project/web" \
+
+    # Include nginx http and server configs from custom folder
+    NGINX_INCLUDE_DIR="/var/www/project/nginx" \
+
+    # Set reasonable default upload size
+    NGINX_MAX_BODY_SIZE="5M" \
+
+    # Set reasonable timeout for nginx and fastcgi
+    NGINX_TIMEOUT="30"
+
+ADD rootfs /

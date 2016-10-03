@@ -1,0 +1,11 @@
+# Ignore Docker and Git related files in build
+.git
+Dockerfile
+.gitignore
+docker-compose.yml
+
+# Ignore meta
+README.md
+Readme.md
+LICENSE
+UNLICENSE
