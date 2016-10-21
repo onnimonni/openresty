@@ -1,4 +1,4 @@
-FROM onnimonni/alpine-base
+FROM onnimonni/alpine-base:edge
 MAINTAINER Onni Hakala <onni.hakala@geniem.com>
 
 # Additional modules for nginx
@@ -47,6 +47,8 @@ ARG RESTY_CONFIG_OPTIONS="\
     --without-http_scgi_module \
     --without-http_referer_module \
 
+    --without-http_redis_module \
+
      --user=nginx \
      --group=nginx \
 
@@ -63,6 +65,8 @@ ARG RESTY_CONFIG_OPTIONS="\
     --http-fastcgi-temp-path=/tmp/nginx/fastcgi \
     --http-proxy-temp-path=/tmp/nginx/proxy \
     --http-client-body-temp-path=/tmp/nginx/client_body \
+
+    --add-module=/tmp/ngx_http_redis-0.3.7-master \
     "
 
 # These are not intended to be user-specified
@@ -97,6 +101,10 @@ RUN \
     && wget -O- https://www.openssl.org/source/openssl-${RESTY_OPENSSL_VERSION}.tar.gz | tar -zx \
     && wget -O- https://ftp.csx.cam.ac.uk/pub/software/programming/pcre/pcre-${RESTY_PCRE_VERSION}.tar.gz | tar -zx \
     && wget -O- https://openresty.org/download/openresty-${RESTY_VERSION}.tar.gz | tar -zx \
+
+    # Openresty bundle contains redis module but we have disabled it and used this one instead
+    # Download custom redis module with AUTH support
+    && wget -O- https://github.com/onnimonni/ngx_http_redis-0.3.7/archive/master.tar.gz | tar -zx \
 
     # Add and validate nginx cache purge module
     && wget https://github.com/FRiCKLE/ngx_cache_purge/archive/${NGX_MOD_CACHE_PURGE_VERSION}.tar.gz -O ngx_cache_purge-${NGX_MOD_CACHE_PURGE_VERSION}.tar.gz \
